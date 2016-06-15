@@ -22,8 +22,16 @@ public class LockerTest {
         final Lock myLock = lockInstance("mylock");
         final ClassWithLockedMethod classWithLockedMethod = new ClassWithLockedMethod();
         assertFalse(Context.get(LockStore.class).isHeld(myLock));
-        classWithLockedMethod.holdLockUntilReleased(myLock);
+        classWithLockedMethod.lock(myLock);
         assertFalse(Context.get(LockStore.class).isHeld(myLock));
+    }
+
+    @Test(expected = LockUnavailableException.class)
+    public void shouldThrowExceptionIfLockIsAlreadyHeld() throws Exception {
+        final Lock myLock = lockInstance("mylock");
+        final ClassWithLockedMethod classWithLockedMethod = new ClassWithLockedMethod();
+        assertFalse(Context.get(LockStore.class).isHeld(myLock));
+        classWithLockedMethod.dualLock(myLock);
     }
 
     private Lock lockInstance(final String value) {
@@ -42,8 +50,14 @@ public class LockerTest {
     class ClassWithLockedMethod {
 
         @Lock("mylock")
-        public void holdLockUntilReleased(final Lock lock) throws Exception {
+        public void lock(final Lock lock) {
             assertTrue(Context.get(LockStore.class).isHeld(lock));
+        }
+
+        @Lock("mylock")
+        public void dualLock(final Lock lock) {
+            assertTrue(Context.get(LockStore.class).isHeld(lock));
+            this.lock(lock);
         }
 
     }
